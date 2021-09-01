@@ -15,7 +15,7 @@ setup(
     author='Alejandro Manzanero',
     author_email='alejmans@gmail.com',
     url='https://github.com/Manzanero/velenium',
-    download_url='https://github.com/Manzanero/velenium/archive/v_0_1_0.tar.gz',
+    download_url='https://github.com/Manzanero/velenium/archive/refs/tags/v0.1.0.tar.gz',
     keywords=['visual testing'],
     install_requires=[
         'opencv-python',
