@@ -37,7 +37,7 @@ class VisualElement(object):
     def __init__(self, driver: WebDriver, path, order: int = 0, disposal: int = VERTICAL_ORDER,
                  similarity: float = 0.8, method=CV_CCOEFF, name: str = None):
         self.driver = driver
-        self.path = path
+        self.path = str(path)
         self.order = order
         self.disposal = disposal
         self.name = name or re.sub(r'\W+', '_', pathlib.Path(path).stem)
