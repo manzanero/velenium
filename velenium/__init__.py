@@ -33,7 +33,7 @@ class VisualMatch(object):
 class VisualElement(object):
 
     def __init__(self, driver: WebDriver, path, order: int = 0, disposal: int = VERTICAL_ORDER,
-                 similarity: float = 0.9, method=CCOEFF, name: str = 'element'):
+                 similarity: float = 0.8, method=CV_CCOEFF, name: str = 'element'):
         self.driver = driver
         self.path = path
         self.order = order
@@ -81,6 +81,9 @@ class VisualElement(object):
                 raise TimeoutException(f'Cannot find "{self.name}" in {timeout} seconds')
             time.sleep(1)
         return self
+
+    def wait_until_clickable(self, timeout=10):
+        return self.wait_until_visible(timeout)
 
     def wait_until_not_visible(self, timeout=10):
         start_time = datetime.now()
