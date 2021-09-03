@@ -1,5 +1,7 @@
 import base64
 import os
+import pathlib
+import re
 import time
 from datetime import datetime
 
@@ -33,17 +35,17 @@ class VisualMatch(object):
 class VisualElement(object):
 
     def __init__(self, driver: WebDriver, path, order: int = 0, disposal: int = VERTICAL_ORDER,
-                 similarity: float = 0.8, method=CV_CCOEFF, name: str = 'element'):
+                 similarity: float = 0.8, method=CV_CCOEFF, name: str = None):
         self.driver = driver
         self.path = path
         self.order = order
         self.disposal = disposal
-        self.name = name
+        self.name = name or re.sub(r'\W+', '_', pathlib.Path(path).stem)
         self.similarity = similarity
         self.method = method
 
         self.max_occurrences = 16
-        self.debug = False
+        self._debug = False
         self.matches: List[VisualMatch] = []
 
     @property
@@ -62,8 +64,8 @@ class VisualElement(object):
     def __iter__(self):
         return iter(self.matches if self.matches else self.reset_object().matches)
 
-    def debug_object(self):
-        self._find_matches(debug=True)
+    def debug(self):
+        self._debug = True
         return self
 
     def reset_object(self):
@@ -104,7 +106,7 @@ class VisualElement(object):
         end_x, end_y = (int((loc[0] + w) * r), int((loc[1] + h) * r))
         return start_x, start_y, end_x, end_y
 
-    def _find_matches(self, debug=False):
+    def _find_matches(self):
         if not os.path.isfile(self.path):
             raise Exception(f"Template route doesn't exist: {self.path}")
         if self.disposal not in range(2):
@@ -119,12 +121,12 @@ class VisualElement(object):
 
         # load the image and initialize the bookkeeping variable to keep track of the matched region
         screenshot = self.driver.get_screenshot_as_base64()
-        decoded_data = base64.b64decode(screenshot)
-        np_data = np.fromstring(decoded_data, np.uint8)  # noqa - it accepts bytes
+        np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
         image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
-        if debug:
+
+        if self._debug:
             os.makedirs('temp', exist_ok=True)
-            cv.imwrite('temp/velenium_screenshot.png', image)
+            cv.imwrite('temp/velenium__screenshot.png', image)
 
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         occurrence = None
@@ -153,10 +155,10 @@ class VisualElement(object):
                 occurrence = (max_val, max_loc, r, resized)
 
             # draw a bounding box around the detected region
-            if debug:
+            if self._debug:
                 clone = np.dstack([resized, resized, resized])
                 cv.rectangle(clone, (max_loc[0], max_loc[1]), (max_loc[0] + w, max_loc[1] + h), (0, 0, 255), 2)
-                cv.imwrite(f'temp/velenium_{self.name}_{int(max_val * 100)}.png', clone)
+                cv.imwrite(f'temp/velenium__{self.name}__{int(max_val * 100)}.png', clone)
 
         if not occurrence:
             self.matches = []
@@ -167,9 +169,9 @@ class VisualElement(object):
         start_x, start_y, end_x, end_y = self._get_bounds(max_loc, w, h, r)
 
         # draw a bounding box around the detected result and display the image
-        if debug:
+        if self._debug:
             cv.rectangle(image, (start_x, start_y), (end_x, end_y), (0, 0, 255), 2)
-            cv.imwrite(f'temp/velenium_{self.name}_best.png', image)
+            cv.imwrite(f'temp/velenium__{self.name}__best.png', image)
 
         self.matches = [VisualMatch(start_x + int(w / 2), start_y + int(h / 2), w, h, max_val)]
 
@@ -178,8 +180,9 @@ class VisualElement(object):
 
             # cover the previous best match in black
             cv.rectangle(resized, (max_loc[0], max_loc[1]), (max_loc[0] + w, max_loc[1] + h), (0, 0, 0), -1)
-            if debug:
-                cv.imwrite(f'temp/velenium_{self.name}_covered_{i}.png', resized)
+
+            if self._debug:
+                cv.imwrite(f'temp/velenium__{self.name}__covered_{i}.png', resized)
 
             # repeat template matching to find the template in the image
             result = cv.matchTemplate(resized, template, self.method)
@@ -189,11 +192,11 @@ class VisualElement(object):
 
             start_x, start_y, end_x, end_y = self._get_bounds(max_loc, w, h, r)
             self.matches.append(VisualMatch(start_x + int(w / 2), start_y + int(h / 2), w, h, max_val))
-            if debug:
+            if self._debug:
                 cv.rectangle(image, (start_x, start_y), (end_x, end_y), (0, 0, 255), 2)
 
-        if debug:
-            cv.imwrite(f'temp/velenium_{self.name}_all.png', image)
+        if self._debug:
+            cv.imwrite(f'temp/velenium__{self.name}__all.png', image)
 
         if self.disposal == VERTICAL_ORDER:
             self.matches.sort(key=lambda v: v.y)
