@@ -6,7 +6,7 @@ Interact with an app using visual definitions of elements
 ```python
 import unittest
 from appium import webdriver
-from velenium import VisualElement, HORIZONTAL_ORDER, SIMILARITY_ORDER, CV_SQDIFF
+from velenium import VisualElement, VERTICAL_ORDER, HORIZONTAL_ORDER, CV_SQDIFF
 
 
 class VisualTestCase(unittest.TestCase):
@@ -17,10 +17,14 @@ class VisualTestCase(unittest.TestCase):
         )
         driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
 
+        # create a visual definition
         element = VisualElement(driver, 'path/to/pattern.png')
+        
+        # create a visual definition using multiple images using glob path
+        element = VisualElement(driver, 'path/to/patterns/**/pattern_*.png')
 
         # assert element is visible
-        assert element.is_visible()
+        self.assertTrue(element.is_visible())
 
         # wait until visual element is visible, raises TimeoutException from selenium if timeout
         element.wait_until_visible()
@@ -37,32 +41,39 @@ class VisualTestCase(unittest.TestCase):
         # click and wait no visibility of the element
         element.click().wait_until_not_visible()
 
-        # find with different similarity threshold, by default is 90%
+        # find with different similarity threshold, by default is 70%
         VisualElement(driver, 'path/to/pattern.png', similarity=0.8).click()
 
-        # click element at 3er position in vertical order (default behaviour)
-        element[2].click()
-        VisualElement(driver, 'path/to/pattern.png', order=2).click()
+        # click the 2nd best match of element
+        VisualElement(driver, 'path/to/pattern.png', order=1).click()
+
+        # click element at 2nd position in vertical order
+        VisualElement(driver, 'path/to/pattern.png', order=1, disposal=VERTICAL_ORDER).click()
+        # or
+        item = VisualElement(driver, 'path/to/pattern.png', disposal=VERTICAL_ORDER)
+        item[1].click()
 
         # click element at 3er position in horizontal order
         VisualElement(driver, 'path/to/pattern.png', order=2, disposal=HORIZONTAL_ORDER).click()
-
-        # click the very best match of element (similarity threshold applies)
-        VisualElement(driver, 'path/to/pattern.png', disposal=SIMILARITY_ORDER).click()
+        # or
+        item = VisualElement(driver, 'path/to/pattern.png', disposal=HORIZONTAL_ORDER)
+        item[2].click()
 
         # use another cv2 method to get the match, by default uses CV_CCOEFF
         VisualElement(driver, 'path/to/pattern.png', method=CV_SQDIFF).wait_until_visible()
 
         # count matches
-        elements = VisualElement(driver, 'path/to/pattern.png')
-        print(len(elements))
+        print(len(element))
 
         # iterate over matches
-        for e in elements:
+        for e in element:
             e.click()
         
-        # get debug images
-        element.debug_object()
+        # enable debug images in "temp/" folder
+        element.debug()
+        
+        # disable debug images
+        element.debug(False)
 
 
 if __name__ == '__main__':
