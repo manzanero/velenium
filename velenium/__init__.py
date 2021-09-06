@@ -91,9 +91,6 @@ class VisualElement(object):
             time.sleep(1)
         return self
 
-    def wait_until_clickable(self, timeout=10):
-        return self.wait_until_visible(timeout)
-
     def wait_until_not_visible(self, timeout=10):
         start_time = datetime.now()
         while self.is_visible():
@@ -103,8 +100,11 @@ class VisualElement(object):
             time.sleep(1)
         return self
 
-    def click(self):
-        self[self.order].click()
+    def wait_until_clickable(self, timeout=10):
+        return self.wait_until_visible(timeout)
+
+    def click(self, timeout=10):
+        self.wait_until_clickable(timeout)[self.order].click()
         return self
 
     @staticmethod
