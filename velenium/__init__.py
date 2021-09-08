@@ -75,6 +75,13 @@ class VisualElement(object):
         self._searched = False
         self._matches: List[VisualMatch] = []
 
+        # Validations
+        if self.disposal not in range(2):
+            raise Exception(f"Disposal priority not valid: {self.disposal}")
+
+        if self.order not in range(self._max_matches):
+            raise Exception(f"Order above max occurrences: {self.order} > {self._max_matches}")
+
         for x in [region[0][0], region[0][1], region[1][0], region[1][1]]:
             if not 0 <= x <= 1:
                 raise Exception(f"Visual region out of bounds: {region}")
@@ -155,10 +162,6 @@ class VisualElement(object):
     def _find_matches(self, template_path):
         if not os.path.isfile(template_path):
             raise Exception(f"Template route doesn't exist: {template_path}")
-        if self.disposal not in range(2):
-            raise Exception(f"Disposal priority not valid: {self.disposal}")
-        if self.order not in range(self._max_matches):
-            raise Exception(f"Order above max occurrences: {self.order} > {self._max_matches}")
 
         debug_name = pathlib.Path(template_path).stem
 
