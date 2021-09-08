@@ -26,8 +26,8 @@ ALL = ((0, 0), (1, 1))
 ABOVE = ((0, 0), (1, 0.3))
 MIDDLE = ((0, 0.3), (1, 0.7))
 BELOW = ((0, 0.7), (1, 1))
-LEFTWARD = ((0, 0), (0.5, 1))
-RIGHTWARD = ((0.5, 0), (1, 1))
+LEFT_SIDE = ((0, 0), (0.5, 1))
+RIGHT_SIDE = ((0.5, 0), (1, 1))
 
 CENTER = (0, 0)
 UP = (0, -1)
@@ -59,7 +59,13 @@ class VisualMatch(object):
         return (start_x, start_y), (end_x, end_y)
 
     def click(self):
-        TouchAction(self.driver).press(x=self.position[0], y=self.position[1]).release().perform()
+        position = self.position
+        viewport = self.driver.get_window_size()
+        viewport_w, viewport_h = viewport['width'], viewport['height']
+        if not 0 <= position[0] <= viewport_w or not 0 <= position[1] <= viewport_h:
+            raise Exception(f"Click out of bounds: {position} (min: {0, 0}, max: {viewport_w, viewport_h})")
+
+        TouchAction(self.driver).press(x=position[0], y=position[1]).release().perform()
 
 
 class VisualElement(object):
@@ -79,6 +85,7 @@ class VisualElement(object):
         self._max_matches = 16
         self._debug = False
         self._searched = False
+        self._image = None
         self._matches: List[VisualMatch] = []
 
         # Validations
@@ -145,6 +152,28 @@ class VisualElement(object):
 
     def _search_all_matches(self):
         self._matches.clear()
+
+        # load the image
+        screenshot = self.driver.get_screenshot_as_base64()
+        np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
+        raw = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
+
+        if self._debug:
+            os.makedirs('temp/velenium', exist_ok=True)
+            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{self.name}__screenshot.png', raw)
+
+        # resize to real viewport
+        viewport = self.driver.get_window_size()
+        viewport_w, viewport_h = viewport['width'], viewport['height']
+        self._image = imutils.resize(raw, width=viewport_w, height=viewport_h)
+        total_h, total_w = self._image.shape[:2]
+
+        # cover outside region in black
+        cv.rectangle(self._image, (0, 0), (total_w, int(total_h * self.region[0][1])), (0, 0, 0), -1)
+        cv.rectangle(self._image, (0, int(total_h * self.region[1][1])), (total_w, total_h), (0, 0, 0), -1)
+        cv.rectangle(self._image, (0, 0), (int(total_w * self.region[0][0]), total_h), (0, 0, 0), -1)
+        cv.rectangle(self._image, (int(total_w * self.region[1][0]), 0), (total_w, total_h), (0, 0, 0), -1)
+
         for template_path in glob.glob(self.path):
             self._find_matches(template_path)
 
@@ -176,28 +205,14 @@ class VisualElement(object):
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         h, w = template.shape[:2]
 
-        # load the image and initialize the bookkeeping variable to keep track of the matched region
-        screenshot = self.driver.get_screenshot_as_base64()
-        np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
-        image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
-
-        if self._debug:
-            os.makedirs('temp/velenium', exist_ok=True)
-            cv.imwrite(f'temp/velenium/{int(time.time() * 1000)}__{debug_name}__screenshot.png', image)
-
-        # cover outside region in black
-        total_h, total_w = image.shape[:2]
-        cv.rectangle(image, (0, 0), (total_w, int(total_h * self.region[0][1])), (0, 0, 0), -1)
-        cv.rectangle(image, (0, int(total_h * self.region[1][1])), (total_w, total_h), (0, 0, 0), -1)
-        cv.rectangle(image, (0, 0), (int(total_w * self.region[0][0]), total_h), (0, 0, 0), -1)
-        cv.rectangle(image, (int(total_w * self.region[1][0]), 0), (total_w, total_h), (0, 0, 0), -1)
-
         # remove colors for performance
-        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        occurrence = None
+        gray = cv.cvtColor(self._image, cv.COLOR_BGR2GRAY)
 
         if self._debug:
-            cv.imwrite(f'temp/velenium/{int(time.time() * 1000)}__{debug_name}__start.png', gray)
+            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__start.png', gray)
+
+        # initialize the bookkeeping variable to keep track of the matched region
+        occurrence = None
 
         # loop over the scales of the image
         for scale in np.linspace(0.2, 1.0, 20)[::-1]:
@@ -226,7 +241,7 @@ class VisualElement(object):
             if self._debug:
                 clone = np.dstack([resized, resized, resized])
                 cv.rectangle(clone, (max_loc[0], max_loc[1]), (max_loc[0] + w, max_loc[1] + h), (0, 0, 255), 2)
-                cv.imwrite(f'temp/velenium/{int(time.time() * 1000)}__{debug_name}__{int(max_val * 100)}%.png', clone)
+                cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__{int(max_val * 100)}%.png', clone)
 
         if not occurrence:
             return
@@ -244,7 +259,7 @@ class VisualElement(object):
             cv.rectangle(resized, (max_loc[0], max_loc[1]), (max_loc[0] + w, max_loc[1] + h), (0, 0, 0), -1)
 
             if self._debug:
-                cv.imwrite(f'temp/velenium/{int(time.time() * 1000)}__{debug_name}__covered_{i}.png', resized)
+                cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__iter_{i}.png', resized)
 
             # repeat template matching to find the template in the image
             result = cv.matchTemplate(resized, template, self.method)
@@ -262,4 +277,4 @@ class VisualElement(object):
                 cv.rectangle(clone, (match.bounds[0][0], match.bounds[0][1]), (match.bounds[1][0], match.bounds[1][1]),
                              (0, 0, 255), 2)
                 cv.circle(clone, (match.position[0], match.position[1]), 4, (0, 255, 0), -1)
-            cv.imwrite(f'temp/velenium/{int(time.time() * 1000)}__{debug_name}__result.png', clone)
+            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__matches.png', clone)
