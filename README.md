@@ -6,7 +6,7 @@ Interact with an app using visual definitions of elements
 ```python
 import unittest
 from appium import webdriver
-from velenium import VisualElement, MIDDLE, VERTICAL, HORIZONTAL, CV_SQDIFF
+from velenium import VisualElement, MIDDLE, RIGHT, VERTICAL, HORIZONTAL, CV_SQDIFF
 
 
 class VisualTestCase(unittest.TestCase):
@@ -39,10 +39,10 @@ class VisualTestCase(unittest.TestCase):
         VisualElement(driver, 'path/to/pattern.png', region=((0.5, 0), (1, 0.5))).click()
         
         # click on element on de right border
-        VisualElement(driver, 'path/to/pattern.png', target=(1, 0)).click()
+        VisualElement(driver, 'path/to/pattern.png', target=RIGHT).click()
         
-        # click on element on de up border
-        VisualElement(driver, 'path/to/pattern.png', target=(0, -1)).click()
+        # custom region, center right in the example
+        VisualElement(driver, 'path/to/pattern.png', target=(0.5, 0)).click()
 
         # refresh position of element and click
         element.reset_object().click()
