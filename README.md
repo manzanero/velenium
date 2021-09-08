@@ -6,7 +6,7 @@ Interact with an app using visual definitions of elements
 ```python
 import unittest
 from appium import webdriver
-from velenium import VisualElement, VERTICAL_ORDER, HORIZONTAL_ORDER, CV_SQDIFF
+from velenium import VisualElement, MIDDLE, VERTICAL, HORIZONTAL, CV_SQDIFF
 
 
 class VisualTestCase(unittest.TestCase):
@@ -19,21 +19,30 @@ class VisualTestCase(unittest.TestCase):
 
         # create a visual definition
         element = VisualElement(driver, 'path/to/pattern.png')
-        
+
         # create a visual definition using multiple images using glob path
         element = VisualElement(driver, 'path/to/patterns/**/pattern_*.png')
 
         # assert element is visible
         self.assertTrue(element.is_visible())
 
-        # wait until visual element is visible, raises TimeoutException from selenium if timeout
+        # wait until element is visible, raises TimeoutException from selenium if timeout
         element.wait_until_visible()
 
-        # wait until visual element is not visible, raises TimeoutException from selenium if timeout
+        # wait until element is not visible, raises TimeoutException from selenium if timeout
         element.wait_until_not_visible()
 
-        # click on element
-        element.click()
+        # find only in de middle region
+        VisualElement(driver, 'path/to/pattern.png', region=MIDDLE).click()
+
+        # custom region, upper right in the example
+        VisualElement(driver, 'path/to/pattern.png', region=((0.5, 0), (1, 0.5))).click()
+        
+        # click on element on de right border
+        VisualElement(driver, 'path/to/pattern.png', target=(1, 0)).click()
+        
+        # click on element on de up border
+        VisualElement(driver, 'path/to/pattern.png', target=(0, -1)).click()
 
         # refresh position of element and click
         element.reset_object().click()
@@ -48,30 +57,32 @@ class VisualTestCase(unittest.TestCase):
         VisualElement(driver, 'path/to/pattern.png', order=1).click()
 
         # click element at 2nd position in vertical order
-        VisualElement(driver, 'path/to/pattern.png', order=1, disposal=VERTICAL_ORDER).click()
+        VisualElement(driver, 'path/to/pattern.png', order=1, disposal=VERTICAL).click()
         # or
-        item = VisualElement(driver, 'path/to/pattern.png', disposal=VERTICAL_ORDER)
-        item[1].click()
+        item = VisualElement(driver, 'path/to/pattern.png', disposal=VERTICAL)
+        item.matches[1].click()
 
         # click element at 3er position in horizontal order
-        VisualElement(driver, 'path/to/pattern.png', order=2, disposal=HORIZONTAL_ORDER).click()
+        VisualElement(driver, 'path/to/pattern.png', order=2, disposal=HORIZONTAL).click()
         # or
-        item = VisualElement(driver, 'path/to/pattern.png', disposal=HORIZONTAL_ORDER)
-        item[2].click()
+        item = VisualElement(driver, 'path/to/pattern.png', disposal=HORIZONTAL)
+        item.matches[2].click()
 
         # use another cv2 method to get the match, by default uses CV_CCOEFF
         VisualElement(driver, 'path/to/pattern.png', method=CV_SQDIFF).wait_until_visible()
 
         # count matches
-        print(len(element))
+        print(len(element.matches))
+        # or
+        print(element.count)
 
         # iterate over matches
-        for e in element:
+        for e in element.matches:
             e.click()
-        
+
         # enable debug images in "temp/" folder
         element.debug()
-        
+
         # disable debug images
         element.debug(False)
 
