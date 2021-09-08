@@ -40,12 +40,13 @@ Bounds = Tuple[Tuple[float, float], Tuple[float, float]]
 
 class VisualMatch(object):
 
-    def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.7):
+    def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.7, ratio=1):
         self.driver = driver
         self.center = center
         self.dimensions = dimensions
         self.target = target
         self.similarity = similarity
+        self.ratio = ratio
 
     @property
     def position(self) -> Tuple[int, int]:
@@ -59,13 +60,13 @@ class VisualMatch(object):
         return (start_x, start_y), (end_x, end_y)
 
     def click(self):
-        position = self.position
+        viewport_position = self.position[0] * self.ratio, self.position[1] * self.ratio
         viewport = self.driver.get_window_size()
         viewport_w, viewport_h = viewport['width'], viewport['height']
-        if not 0 <= position[0] <= viewport_w or not 0 <= position[1] <= viewport_h:
-            raise Exception(f"Click out of bounds: {position} (min: {0, 0}, max: {viewport_w, viewport_h})")
+        if not 0 <= viewport_position[0] <= viewport_w or not 0 <= viewport_position[1] <= viewport_h:
+            raise Exception(f"Click out of bounds: {viewport_position} (min: {0, 0}, max: {viewport_w, viewport_h})")
 
-        TouchAction(self.driver).press(x=position[0], y=position[1]).release().perform()
+        TouchAction(self.driver).press(x=int(viewport_position[0]), y=int(viewport_position[1])).release().perform()
 
 
 class VisualElement(object):
@@ -156,17 +157,13 @@ class VisualElement(object):
         # load the image
         screenshot = self.driver.get_screenshot_as_base64()
         np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
-        raw = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
+        self._image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
+        total_h, total_w = self._image.shape[:2]
+        self.ratio = self.driver.get_window_size()['width'] / total_w
 
         if self._debug:
             os.makedirs('temp/velenium', exist_ok=True)
-            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{self.name}__screenshot.png', raw)
-
-        # resize to real viewport
-        viewport = self.driver.get_window_size()
-        viewport_w, viewport_h = viewport['width'], viewport['height']
-        self._image = imutils.resize(raw, width=viewport_w, height=viewport_h)
-        total_h, total_w = self._image.shape[:2]
+            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{self.name}__screenshot.png', self._image)
 
         # cover outside region in black
         cv.rectangle(self._image, (0, 0), (total_w, int(total_h * self.region[0][1])), (0, 0, 0), -1)
@@ -209,7 +206,7 @@ class VisualElement(object):
         gray = cv.cvtColor(self._image, cv.COLOR_BGR2GRAY)
 
         if self._debug:
-            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__start.png', gray)
+            cv.imwrite(f'temp/velenium/{round(time.time() * 1000)}__{debug_name}__init.png', gray)
 
         # initialize the bookkeeping variable to keep track of the matched region
         occurrence = None
@@ -250,7 +247,7 @@ class VisualElement(object):
         max_val, max_loc, r, resized = occurrence
         start_x, start_y, end_x, end_y, real_w, real_h = self._get_bounds(max_loc, w, h, r)
         self._matches.append(VisualMatch(self.driver, (start_x + real_w / 2, start_y + real_h / 2),
-                                         (real_w, real_h), self.target, max_val))
+                                         (real_w, real_h), self.target, max_val, self.ratio))
 
         # from that resized image get more matches
         for i in range(self._max_matches):
@@ -269,7 +266,7 @@ class VisualElement(object):
 
             start_x, start_y, end_x, end_y, real_w, real_h = self._get_bounds(max_loc, w, h, r)
             self._matches.append(VisualMatch(self.driver, (start_x + real_w / 2, start_y + real_h / 2),
-                                             (real_w, real_h), self.target, max_val))
+                                             (real_w, real_h), self.target, max_val, self.ratio))
 
         if self._debug:
             clone = np.dstack([gray, gray, gray])
