@@ -22,25 +22,32 @@ CV_CCOEFF = cv.TM_CCOEFF_NORMED
 CV_CCORR = cv.TM_CCORR_NORMED
 CV_SQDIFF = cv.TM_SQDIFF_NORMED
 
-ALL = ((0, 0), (1, 1))
-ABOVE = ((0, 0), (1, 0.3))
-MIDDLE = ((0, 0.3), (1, 0.7))
-BELOW = ((0, 0.7), (1, 1))
-LEFT_SIDE = ((0, 0), (0.5, 1))
-RIGHT_SIDE = ((0.5, 0), (1, 1))
+ALL = (0, 0), (1, 1)
+UP_SIDE = (0, 0), (1, 0.5)
+DOWN_SIDE = (0, 0.5), (1, 1)
+LEFT_SIDE = (0, 0), (0.5, 1)
+RIGHT_SIDE = (0.5, 0), (1, 1)
+UP_LEFT_SIDE = (0, 0), (0.5, 0.5)
+UP_RIGHT_SIDE = (0.5, 0), (1, 0.5)
+DOWN_LEFT_SIDE = (0, 0.5), (0.5, 1)
+DOWN_RIGHT_SIDE = (0.5, 0.5), (1, 1)
 
-CENTER = (0, 0)
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
+CENTER = 0, 0
+UP = 0, -1
+DOWN = 0, 1
+LEFT = -1, 0
+RIGHT = 1, 0
+MIDDLE_UP = 0, -0.5
+MIDDLE_DOWN = 0, 0.5
+MIDDLE_LEFT = -0.5, 0
+MIDDLE_RIGHT = 0.5, 0
 
 Bounds = Tuple[Tuple[float, float], Tuple[float, float]]
 
 
 class VisualMatch(object):
 
-    def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.7, ratio=1):
+    def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.8, ratio=1):
         self.driver = driver
         self.center = center
         self.dimensions = dimensions
@@ -71,7 +78,7 @@ class VisualMatch(object):
 
 class VisualElement(object):
 
-    def __init__(self, driver: WebDriver, path, target: Tuple = CENTER, similarity: float = 0.7, order: int = 0,
+    def __init__(self, driver: WebDriver, path, target: Tuple = CENTER, similarity: float = 0.8, order: int = 0,
                  disposal: int = SIMILARITY, method=CV_CCOEFF, region: Bounds = ALL, name: str = None):
         self.driver = driver
         self.path = str(path)

@@ -6,7 +6,7 @@ Interact with an app using visual definitions of elements
 ```python
 import unittest
 from appium import webdriver
-from velenium import VisualElement, MIDDLE, RIGHT, VERTICAL, HORIZONTAL, CV_SQDIFF
+from velenium import VisualElement, LEFT_SIDE, RIGHT, VERTICAL, HORIZONTAL, CV_SQDIFF
 
 
 class VisualTestCase(unittest.TestCase):
@@ -33,7 +33,7 @@ class VisualTestCase(unittest.TestCase):
         element.wait_until_not_visible()
 
         # find only in de middle region
-        VisualElement(driver, 'path/to/pattern.png', region=MIDDLE).click()
+        VisualElement(driver, 'path/to/pattern.png', region=LEFT_SIDE).click()
 
         # custom region, upper right in the example
         VisualElement(driver, 'path/to/pattern.png', region=((0.5, 0), (1, 0.5))).click()
@@ -50,8 +50,8 @@ class VisualTestCase(unittest.TestCase):
         # click and wait no visibility of the element
         element.click().wait_until_not_visible()
 
-        # find with different similarity threshold, by default is 70%
-        VisualElement(driver, 'path/to/pattern.png', similarity=0.8).click()
+        # find with different similarity threshold, by default is 80%
+        VisualElement(driver, 'path/to/pattern.png', similarity=0.7).click()
 
         # click the 2nd best match of element
         VisualElement(driver, 'path/to/pattern.png', order=1).click()
