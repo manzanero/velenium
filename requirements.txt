@@ -3,3 +3,5 @@ imutils
 numpy
 Appium-Python-Client
 selenium
+PyAutoGUI
+typing

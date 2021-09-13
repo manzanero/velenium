@@ -9,6 +9,7 @@ from datetime import datetime
 import cv2 as cv
 import imutils
 import numpy as np
+import pyautogui
 from appium.webdriver.common.touch_action import TouchAction
 from appium.webdriver.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException
@@ -45,6 +46,24 @@ MIDDLE_RIGHT = 0.5, 0
 Bounds = Tuple[Tuple[float, float], Tuple[float, float]]
 
 
+class VisualDriver(object):
+
+    @staticmethod
+    def get_screenshot_as_image():
+        return pyautogui.screenshot()
+
+    @staticmethod
+    def get_window_size():
+        size = pyautogui.size()
+        return {'width': size[0], 'height': size[1]}
+
+    def close(self):
+        pass
+
+    def quit(self):
+        pass
+
+
 class VisualMatch(object):
 
     def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.8, ratio=1):
@@ -71,15 +90,19 @@ class VisualMatch(object):
         viewport = self.driver.get_window_size()
         viewport_w, viewport_h = viewport['width'], viewport['height']
         if not 0 <= viewport_position[0] <= viewport_w or not 0 <= viewport_position[1] <= viewport_h:
-            raise Exception(f"Click out of bounds: {viewport_position} (min: {0, 0}, max: {viewport_w, viewport_h})")
+            raise Exception(f"Click out of bounds: {viewport_position} (max: {viewport_w, viewport_h})")
+
+        if isinstance(self.driver, VisualDriver):
+            pyautogui.click(x=viewport_position[0], y=viewport_position[1], button='left')
+            return
 
         TouchAction(self.driver).press(x=int(viewport_position[0]), y=int(viewport_position[1])).release().perform()
 
 
 class VisualElement(object):
 
-    def __init__(self, driver: WebDriver, path, target: Tuple = CENTER, similarity: float = 0.8, order: int = 0,
-                 disposal: int = SIMILARITY, method=CV_CCOEFF, region: Bounds = ALL, name: str = None):
+    def __init__(self, driver: [WebDriver, VisualDriver], path, target: Tuple = CENTER, similarity: float = 0.8,
+                 order: int = 0, disposal: int = SIMILARITY, method=CV_CCOEFF, region: Bounds = ALL, name: str = None):
         self.driver = driver
         self.path = str(path)
         self.target = target
@@ -162,9 +185,15 @@ class VisualElement(object):
         self._matches.clear()
 
         # load the image
-        screenshot = self.driver.get_screenshot_as_base64()
-        np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
-        self._image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
+        if isinstance(self.driver, VisualDriver):
+            screenshot = self.driver.get_screenshot_as_image()
+            np_data = np.array(screenshot)
+            self._image = cv.cvtColor(np_data, cv.COLOR_RGB2BGR)
+        else:
+            screenshot = self.driver.get_screenshot_as_base64()
+            np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
+            self._image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
+
         total_h, total_w = self._image.shape[:2]
         self.ratio = self.driver.get_window_size()['width'] / total_w
 
