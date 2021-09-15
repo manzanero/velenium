@@ -11,7 +11,7 @@ import velenium as ve
 
 class VisualTestCase(unittest.TestCase):
     
-    def setUpClass(self):
+    def setUp(self):
         # given a driver
         self.driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_capabilities={...})
         # or for local desktop automation

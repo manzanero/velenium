@@ -3,5 +3,5 @@ imutils
 numpy
 Appium-Python-Client
 selenium
-PyAutoGUI
+PyAutoGUI==0.9.53
 typing
