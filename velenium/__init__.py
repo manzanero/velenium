@@ -15,6 +15,8 @@ from appium.webdriver.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException
 from typing import List, Tuple
 
+from selenium.webdriver import ActionChains
+
 SIMILARITY = 0
 VERTICAL = 1
 HORIZONTAL = 2
@@ -93,10 +95,18 @@ class VisualMatch(object):
             raise Exception(f"Click out of bounds: {viewport_position} (max: {viewport_w, viewport_h})")
 
         if isinstance(self.driver, VisualDriver):
-            pyautogui.click(x=viewport_position[0], y=viewport_position[1], button='left')
+            pyautogui.click(x=int(viewport_position[0]), y=int(viewport_position[1]), button='left')
             return
 
-        TouchAction(self.driver).press(x=int(viewport_position[0]), y=int(viewport_position[1])).release().perform()
+        # appium
+        if self.driver.capabilities['platformName'].lower() in ['android', 'ios']:
+            TouchAction(self.driver).press(x=int(viewport_position[0]), y=int(viewport_position[1])).release().perform()
+            return
+
+        # selenium
+        actions = ActionChains(self.driver)
+        actions.move_to_element_with_offset(self.driver.find_element_by_tag_name('body'), 0, 0)
+        actions.move_by_offset(int(viewport_position[0]), int(viewport_position[1])).click().perform()
 
 
 class VisualElement(object):
