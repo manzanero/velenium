@@ -13,11 +13,18 @@ class ActionsTestCase(unittest.TestCase):
             app="test.apk",
         ))
 
+    def test_find(self):
+        element = ve.VisualElement(self.driver, 'tests/resources/appium.png',
+                                   target=ve.MIDDLE_LEFT,
+                                   similarity=0.7,
+                                   order=1,
+                                   disposal=ve.VERTICAL,
+                                   region=ve.UP_SIDE)
+        element.debug()
+        element.click()
+
     def tearDown(self):
         self.driver.quit()
-
-    def test_find(self):
-        ve.VisualElement(self.driver, 'tests/resources/appium.png').click()
 
 
 if __name__ == '__main__':

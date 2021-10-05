@@ -3,3 +3,6 @@ __python__
 dist
 MANIFEST
 *.egg-info
+venv
+temp
+*-local.*
