@@ -9,13 +9,19 @@ from datetime import datetime
 import cv2 as cv
 import imutils
 import numpy as np
-import pyautogui
 from appium.webdriver.common.touch_action import TouchAction
 from appium.webdriver.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException
 from typing import List, Tuple
 
 from selenium.webdriver import ActionChains
+
+try:
+    import pyautogui
+    PYAUTOGUI_ENABLED = True
+except Exception as e:
+    PYAUTOGUI_ERROR = str(e)
+    PYAUTOGUI_ENABLED = False
 
 SIMILARITY = 0
 VERTICAL = 1
@@ -49,6 +55,10 @@ Bounds = Tuple[Tuple[float, float], Tuple[float, float]]
 
 
 class VisualDriver(object):
+
+    def __init__(self):
+        if not PYAUTOGUI_ENABLED:
+            raise Exception("Cannot create a VisualDriver because PYAUTOGUI shows this error: " + PYAUTOGUI_ERROR)
 
     @staticmethod
     def get_screenshot_as_image():

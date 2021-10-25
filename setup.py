@@ -7,7 +7,7 @@ with open('README.md', encoding='utf-8') as f:
 setup(
     name='velenium',
     packages=['velenium'],
-    version='0.5.8',
+    version='0.5.9',
     license='MIT',
     description='Interact with an app using visual definitions of elements',
     long_description=long_description,
@@ -15,7 +15,7 @@ setup(
     author='Alejandro Manzanero',
     author_email='alejmans@gmail.com',
     url='https://github.com/Manzanero/velenium',
-    download_url='https://github.com/Manzanero/velenium/archive/refs/tags/v0.5.8.tar.gz',
+    download_url='https://github.com/Manzanero/velenium/archive/refs/tags/v0.5.9.tar.gz',
     keywords=['visual', 'testing', 'selenium', 'appium', 'desktop'],
     install_requires=[
         'opencv-python',
@@ -24,7 +24,6 @@ setup(
         'numpy',
         'Appium-Python-Client',
         'selenium',
-        'PyAutoGUI==0.9.53',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',      # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
