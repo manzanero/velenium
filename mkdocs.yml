@@ -1,5 +1,6 @@
 site_name: velenium
 site_url: https://github.com/manzanero/velenium
+docs_dir: .
 nav:
     - Home: README.md
 theme: readthedocs
