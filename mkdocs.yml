@@ -1,5 +1,6 @@
 site_name: velenium
 site_url: https://velenium.readthedocs.io/
 nav:
+    - index.md
     - Usage: usage.md
 theme: readthedocs

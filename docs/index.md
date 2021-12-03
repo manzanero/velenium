@@ -1,4 +1,5 @@
-# Welcome to velenium! (Building in progress)
+# Welcome to velenium!
+`(Building in progress)`
 
 Interact with an app using visual definitions of elements
 
@@ -8,4 +9,4 @@ Interact with an app using visual definitions of elements
 pip install velenium
 ```
 
-Now go to usage section
+[Now go to usage section](usage.md)
