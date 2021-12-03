@@ -12,9 +12,9 @@ import numpy as np
 from appium.webdriver.common.touch_action import TouchAction
 from appium.webdriver.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver import ActionChains
 from typing import List, Tuple
 
-from selenium.webdriver import ActionChains
 
 try:
     import pyautogui

@@ -1,6 +1,7 @@
 __python__
 .idea
 dist
+build
 MANIFEST
 *.egg-info
 venv
