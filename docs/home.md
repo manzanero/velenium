@@ -1,8 +1,3 @@
-# velenium
-Interact with an app using visual definitions of elements
-
-## sample usage
-
 ```python
 import unittest
 from appium import webdriver
