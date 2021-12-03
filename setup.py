@@ -25,6 +25,15 @@ setup(
         'Appium-Python-Client',
         'selenium',
     ],
+    extras_require={
+        # 'tests': [
+        #     'nose',
+        #     'pycodestyle >= 2.1.0'
+        # ],
+        'docs': [
+            'mkdocs==1.2.*',
+        ]
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',      # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
         'Intended Audience :: Developers',

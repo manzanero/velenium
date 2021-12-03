@@ -2,6 +2,7 @@ __python__
 .idea
 dist
 build
+site
 MANIFEST
 *.egg-info
 venv
