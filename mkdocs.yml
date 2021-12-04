@@ -1,7 +1,6 @@
 site_name: velenium
 site_url: https://velenium.readthedocs.io/
 nav:
-  - Home: index.md
   - Usage: usage.md
   - Examples: examples.md
 
