@@ -1,6 +1,14 @@
 site_name: velenium
 site_url: https://velenium.readthedocs.io/
 nav:
-    - Usage: usage.md
-    - Examples: examples.md
+  - Home: index.md
+  - Usage: usage.md
+  - Examples: examples.md
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+      baselevel: 2
+      separator: "_"
+
 theme: readthedocs

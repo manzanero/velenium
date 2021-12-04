@@ -1,4 +1,8 @@
-# Desktop driver
+# Examples
+
+A few examples
+
+## Desktop driver
 
 ```python
 import unittest
@@ -22,7 +26,7 @@ if __name__ == '__main__':
     unittest.main()
 ```
 
-# Selenium driver
+## Selenium driver
 
 ```python
 import unittest
@@ -57,7 +61,7 @@ if __name__ == '__main__':
     unittest.main()
 ```
 
-# Appium driver
+## Appium driver
 
 ```python
 import unittest
@@ -91,5 +95,4 @@ class ActionsTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
 ```
