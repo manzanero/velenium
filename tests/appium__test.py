@@ -1,5 +1,7 @@
 import unittest
 
+from appium.options.common import AppiumOptions
+
 import velenium as ve
 from appium import webdriver
 
@@ -7,11 +9,16 @@ from appium import webdriver
 class ActionsTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.driver = webdriver.Remote('http://localhost:4723/wd/hub', dict(
-            platformName='Android',
-            deviceName='Android Emulator',
-            app="test.apk",
-        ))
+        options = AppiumOptions()
+        options.load_capabilities({
+            'automationName': 'UIAutomator2',
+            'platformName': 'Android',
+            'deviceName': 'Android Emulator',
+            'app': 'test.apk',
+        })
+
+        # Create remote appium driver
+        self.driver = webdriver.Remote('http://localhost:4723/wd/hub', options=options)
 
     def test_find(self):
         element = ve.VisualElement(self.driver, 'tests/resources/appium.png',

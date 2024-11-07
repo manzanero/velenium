@@ -9,12 +9,8 @@ from datetime import datetime
 import cv2 as cv
 import imutils
 import numpy as np
-from appium.webdriver.common.touch_action import TouchAction
-from appium.webdriver.webdriver import WebDriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
-from typing import List, Tuple
-
 
 try:
     import pyautogui
@@ -51,7 +47,7 @@ MIDDLE_DOWN = 0, 0.5
 MIDDLE_LEFT = -0.5, 0
 MIDDLE_RIGHT = 0.5, 0
 
-Bounds = Tuple[Tuple[float, float], Tuple[float, float]]
+Bounds = tuple[tuple[float, float], tuple[float, float]]
 
 
 class VisualDriver(object):
@@ -78,7 +74,8 @@ class VisualDriver(object):
 
 class VisualMatch(object):
 
-    def __init__(self, driver, center: Tuple, dimensions: Tuple, target: Tuple = CENTER, similarity=0.8, ratio=1):
+    def __init__(self, driver, center: tuple[int, int], dimensions: tuple[int, int],
+                 target: tuple[int, int] = CENTER, similarity=0.8, ratio=1):
         self.driver = driver
         self.center = center
         self.dimensions = dimensions
@@ -87,9 +84,9 @@ class VisualMatch(object):
         self.ratio = ratio
 
     @property
-    def position(self) -> Tuple[int, int]:
+    def position(self) -> tuple[int, int]:
         return int(self.center[0] + self.target[0] * self.dimensions[0] / 2), \
-               int(self.center[1] + self.target[1] * self.dimensions[1] / 2)
+            int(self.center[1] + self.target[1] * self.dimensions[1] / 2)
 
     @property
     def bounds(self) -> Bounds:
@@ -98,30 +95,40 @@ class VisualMatch(object):
         return (start_x, start_y), (end_x, end_y)
 
     def click(self):
-        viewport_position = self.position[0] * self.ratio, self.position[1] * self.ratio
+        viewport_x, viewport_y = self.position[0] * self.ratio, self.position[1] * self.ratio
         viewport = self.driver.get_window_size()
         viewport_w, viewport_h = viewport['width'], viewport['height']
-        if not 0 <= viewport_position[0] <= viewport_w or not 0 <= viewport_position[1] <= viewport_h:
-            raise Exception(f"Click out of bounds: {viewport_position} (max: {viewport_w, viewport_h})")
+        if not 0 <= viewport_x <= viewport_w or not 0 <= viewport_y <= viewport_h:
+            raise Exception(f"Click out of bounds: {viewport_x, viewport_y} (max: {viewport_w, viewport_h})")
 
+        # pyautogui
         if isinstance(self.driver, VisualDriver):
-            pyautogui.click(x=int(viewport_position[0]), y=int(viewport_position[1]), button='left')
-            return
+            pyautogui.click(x=int(viewport_x), y=int(viewport_y), button='left')
 
         # appium
-        if self.driver.capabilities['platformName'].lower() in ['android', 'ios']:
-            TouchAction(self.driver).press(x=int(viewport_position[0]), y=int(viewport_position[1])).release().perform()
-            return
+        elif self.driver.capabilities['platformName'].lower() in ['android', 'ios']:
+            from selenium.webdriver.common.actions.pointer_input import PointerInput
+            from selenium.webdriver.common.actions import interaction
+            from selenium.webdriver.common.actions.action_builder import ActionBuilder
+
+            actions = ActionChains(self.driver)
+            touch_input = PointerInput(interaction.POINTER_TOUCH, 'touch')
+            actions.w3c_actions = ActionBuilder(self.driver, touch_input)
+            actions.w3c_actions.pointer_action.move_to_location(int(viewport_x), int(viewport_y))
+            actions.w3c_actions.pointer_action.pointer_down()
+            actions.w3c_actions.pointer_action.pointer_up()
+            actions.perform()
 
         # selenium
-        actions = ActionChains(self.driver)
-        actions.move_to_element_with_offset(self.driver.find_element_by_tag_name('body'), 0, 0)
-        actions.move_by_offset(int(viewport_position[0]), int(viewport_position[1])).click().perform()
+        else:
+            actions = ActionChains(self.driver)
+            actions.move_to_element_with_offset(self.driver.find_element_by_tag_name('body'), 0, 0)
+            actions.move_by_offset(int(viewport_x), int(viewport_y)).click().perform()
 
 
 class VisualElement(object):
 
-    def __init__(self, driver: [WebDriver, VisualDriver], path, target: Tuple = CENTER, similarity: float = 0.8,
+    def __init__(self, driver, path, target: tuple[int, int] = CENTER, similarity: float = 0.8,
                  order: int = 0, disposal: int = SIMILARITY, method=CV_CCOEFF, region: Bounds = ALL, name: str = None):
         self.driver = driver
         self.path = str(path)
@@ -137,7 +144,7 @@ class VisualElement(object):
         self._debug = False
         self._searched = False
         self._image = None
-        self._matches: List[VisualMatch] = []
+        self._matches: list[VisualMatch] = []
 
         # Validations
         if self.disposal not in range(2):
@@ -153,7 +160,7 @@ class VisualElement(object):
             raise Exception(f"Visual region error: {region}")
 
     @property
-    def matches(self) -> List[VisualMatch]:
+    def matches(self) -> list[VisualMatch]:
         return self._matches if self._searched else self._search_all_matches()._matches
 
     @property
@@ -211,7 +218,7 @@ class VisualElement(object):
             self._image = cv.cvtColor(np_data, cv.COLOR_RGB2BGR)
         else:
             screenshot = self.driver.get_screenshot_as_base64()
-            np_data = np.fromstring(base64.b64decode(screenshot), np.uint8)  # noqa - it accepts bytes
+            np_data = np.frombuffer(base64.b64decode(screenshot), np.uint8)
             self._image = cv.imdecode(np_data, cv.IMREAD_UNCHANGED)
 
         total_h, total_w = self._image.shape[:2]
@@ -227,8 +234,12 @@ class VisualElement(object):
         cv.rectangle(self._image, (0, 0), (int(total_w * self.region[0][0]), total_h), (0, 0, 0), -1)
         cv.rectangle(self._image, (int(total_w * self.region[1][0]), 0), (total_w, total_h), (0, 0, 0), -1)
 
-        for template_path in glob.glob(self.path):
-            self._find_matches(template_path)
+        pattern_paths = glob.glob(self.path)
+        if not pattern_paths:
+            raise Exception(f"Pattern path doesn't match any file: {self.path}")
+        
+        for pattern_path in pattern_paths:
+            self._find_matches(pattern_path)
 
         if self.disposal == VERTICAL:
             self._matches.sort(key=lambda v: v.center[1])
@@ -247,14 +258,14 @@ class VisualElement(object):
         real_w, real_h = end_x - start_x, end_y - start_y
         return start_x, start_y, end_x, end_y, real_w, real_h
 
-    def _find_matches(self, template_path):
-        if not os.path.isfile(template_path):
-            raise Exception(f"Template route doesn't exist: {template_path}")
+    def _find_matches(self, pattern_path):
+        if not os.path.isfile(pattern_path):
+            raise Exception(f"Template route doesn't exist: {pattern_path}")
 
-        debug_name = pathlib.Path(template_path).stem
+        debug_name = pathlib.Path(pattern_path).stem
 
         # load the template image, convert it to grayscale
-        template = cv.imread(template_path)
+        template = cv.imread(pattern_path)
         template = cv.cvtColor(template, cv.COLOR_BGR2GRAY)
         h, w = template.shape[:2]
 
@@ -274,11 +285,11 @@ class VisualElement(object):
             resized = imutils.resize(gray, width=int(gray.shape[1] * scale))
             r = gray.shape[1] / float(resized.shape[1])
 
-            # if the resized image is smaller than the template, then break from the loop
+            # if the resized image is smaller than the pattern, then break from the loop
             if resized.shape[0] < h or resized.shape[1] < w:
                 break
 
-            # apply template matching to find the template in the image
+            # apply template matching to find the pattern in the image
             result = cv.matchTemplate(resized, template, self.method)
 
             # get best match and its coordinates, discard if not enough similarity
