@@ -5,7 +5,10 @@ Interact with an app using visual definitions of elements
 
 ```python
 import unittest
+
 from appium import webdriver
+from appium.options.common import AppiumOptions
+
 import velenium as ve
 
 
@@ -13,7 +16,11 @@ class VisualTestCase(unittest.TestCase):
     
     def setUp(self):
         # given a driver
-        self.driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_capabilities={...})
+        options = AppiumOptions()
+        options.load_capabilities({'automationName': 'UIAutomator2', 'platformName': 'Android', ...})
+
+        # Create remote appium driver
+        self.driver = webdriver.Remote(command_executor='http://localhost:4723/wd/hub', options=options)
         # or for local desktop automation
         self.driver = ve.VisualDriver()
 

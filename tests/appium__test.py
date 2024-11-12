@@ -1,9 +1,8 @@
 import unittest
 
-from appium.options.common import AppiumOptions
-
 import velenium as ve
 from appium import webdriver
+from appium.options.common import AppiumOptions
 
 
 class ActionsTestCase(unittest.TestCase):
